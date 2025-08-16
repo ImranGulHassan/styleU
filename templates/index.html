@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StyleU - Virtual Try-On</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>StyleU Virtual Try-On</h1>
+            <p>Upload your photo and clothing item to see how they look together!</p>
+        </header>
+
+        <main>
+            <div class="upload-section">
+                <div class="upload-card">
+                    <h3>Upload Your Photo</h3>
+                    <div class="file-input-wrapper">
+                        <input type="file" id="person-image" name="person-image" accept="image/*" required>
+                        <label for="person-image" class="file-input-label">
+                            <span class="file-input-text">Choose person image</span>
+                            <span class="file-input-icon">📷</span>
+                        </label>
+                    </div>
+                    <div class="image-preview" id="person-preview">
+                        <img id="person-img" src="" alt="Person preview" style="display: none;">
+                        <div class="placeholder" id="person-placeholder">No image selected</div>
+                    </div>
+                </div>
+
+                <div class="upload-card">
+                    <h3>Upload Clothing Item</h3>
+                    <div class="file-input-wrapper">
+                        <input type="file" id="clothing-image" name="clothing-image" accept="image/*" required>
+                        <label for="clothing-image" class="file-input-label">
+                            <span class="file-input-text">Choose clothing image</span>
+                            <span class="file-input-icon">👕</span>
+                        </label>
+                    </div>
+                    <div class="image-preview" id="clothing-preview">
+                        <img id="clothing-img" src="" alt="Clothing preview" style="display: none;">
+                        <div class="placeholder" id="clothing-placeholder">No image selected</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-section">
+                <button id="try-on-btn" class="try-on-button" disabled>
+                    <span class="button-text">Try On Outfit</span>
+                    <span class="loading-spinner" style="display: none;">⏳</span>
+                </button>
+            </div>
+
+            <div class="result-section" id="result-section" style="display: none;">
+                <h3>Your Virtual Try-On Result</h3>
+                <div class="result-container">
+                    <img id="result-image" src="" alt="Virtual try-on result">
+                    <div class="result-actions">
+                        <button id="download-btn" class="download-button">Download Image</button>
+                        <button id="try-again-btn" class="try-again-button">Try Another Outfit</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="error-message" id="error-message" style="display: none;">
+                <div class="error-content">
+                    <span class="error-icon">⚠️</span>
+                    <span class="error-text"></span>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Powered by StyleU</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
