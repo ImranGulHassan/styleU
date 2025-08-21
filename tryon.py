@@ -34,7 +34,6 @@ def get_access_token():
         if not credentials:
             raise Exception("Failed to load credentials")
         
-        # Refresh the credentials to get a valid token
         credentials.refresh(Request())
         return credentials.token
     except Exception as e:
@@ -44,19 +43,15 @@ def get_access_token():
 def process_image(image_file):
     """Process uploaded image and convert to appropriate format"""
     try:
-        # Open image with PIL
         image = PILImage.open(image_file)
         
-        # Convert to RGB if necessary
         if image.mode != 'RGB':
             image = image.convert('RGB')
         
-        # Resize if too large (max 2048x2048)
         max_size = 2048
         if image.width > max_size or image.height > max_size:
             image.thumbnail((max_size, max_size), PILImage.Resampling.LANCZOS)
         
-        # Save to bytes
         img_byte_arr = io.BytesIO()
         image.save(img_byte_arr, format='PNG')
         img_byte_arr = img_byte_arr.getvalue()
@@ -75,7 +70,6 @@ def index():
 def virtual_tryon():
     """Handle virtual try-on request"""
     try:
-        # Check if files are present
         if 'person_image' not in request.files or 'clothing_image' not in request.files:
             return jsonify({'error': 'Both person and clothing images are required'}), 400
         
@@ -85,23 +79,19 @@ def virtual_tryon():
         if person_file.filename == '' or clothing_file.filename == '':
             return jsonify({'error': 'No files selected'}), 400
         
-        # Process images
         person_image_bytes = process_image(person_file)
         clothing_image_bytes = process_image(clothing_file)
         
         if not person_image_bytes or not clothing_image_bytes:
             return jsonify({'error': 'Failed to process images'}), 400
         
-        # Get access token for authentication
         access_token = get_access_token()
         if not access_token:
             return jsonify({'error': 'Failed to get authentication token'}), 500
         
-        # Convert images to base64
         person_image_b64 = base64.b64encode(person_image_bytes).decode('utf-8')
         clothing_image_b64 = base64.b64encode(clothing_image_bytes).decode('utf-8')
         
-        # Prepare the REST API request
         url = f"https://{LOCATION}-aiplatform.googleapis.com/v1/projects/{PROJECT_ID}/locations/{LOCATION}/publishers/google/models/{MODEL_NAME}:predict"
         
         headers = {
@@ -131,7 +121,6 @@ def virtual_tryon():
             }
         }
         
-        # Make the API request
         response = requests.post(url, headers=headers, json=payload)
         
         if response.status_code != 200:
@@ -139,13 +128,11 @@ def virtual_tryon():
             print(error_msg)
             return jsonify({'error': error_msg}), 500
         
-        # Parse the response
         result = response.json()
         
         if 'predictions' not in result or not result['predictions']:
             return jsonify({'error': 'No predictions in API response'}), 500
         
-        # Extract the generated image from the first prediction
         prediction = result['predictions'][0]
         if 'bytesBase64Encoded' in prediction:
             result_image_base64 = prediction['bytesBase64Encoded']
@@ -167,7 +154,6 @@ def health_check():
     return jsonify({'status': 'healthy', 'service': 'Virtual Try-On API'})
 
 if __name__ == '__main__':
-    # Create templates directory if it doesn't exist
     os.makedirs('templates', exist_ok=True)
     os.makedirs('static', exist_ok=True)
     
