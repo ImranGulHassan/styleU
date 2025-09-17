@@ -7,6 +7,9 @@ from flask_cors import CORS
 from google.oauth2 import service_account
 from google.auth.transport.requests import Request
 from PIL import Image as PILImage
+from pillow_heif import register_heif_opener
+
+register_heif_opener()
 
 app = Flask(__name__)
 CORS(app)
@@ -40,22 +43,34 @@ def get_access_token():
         print(f"Error getting access token: {e}")
         return None
 
-def process_image(image_file):
-    """Process uploaded image and convert to appropriate format"""
+def process_image(image_data):
+    """Process base64 image data and convert to appropriate format"""
     try:
-        image = PILImage.open(image_file)
-        
+        # If it's a data URL, extract the base64 part
+        if isinstance(image_data, str) and image_data.startswith('data:'):
+            # Remove data:image/type;base64, prefix
+            image_data = image_data.split(',')[1]
+
+        # Decode base64 to bytes
+        if isinstance(image_data, str):
+            image_bytes = base64.b64decode(image_data)
+        else:
+            image_bytes = image_data
+
+        # Open image from bytes
+        image = PILImage.open(io.BytesIO(image_bytes))
+
         if image.mode != 'RGB':
             image = image.convert('RGB')
-        
+
         max_size = 2048
         if image.width > max_size or image.height > max_size:
             image.thumbnail((max_size, max_size), PILImage.Resampling.LANCZOS)
-        
+
         img_byte_arr = io.BytesIO()
         image.save(img_byte_arr, format='PNG')
         img_byte_arr = img_byte_arr.getvalue()
-        
+
         return img_byte_arr
     except Exception as e:
         print(f"Error processing image: {e}")
@@ -68,20 +83,43 @@ def index():
 
 @app.route('/virtual-tryon', methods=['POST'])
 def virtual_tryon():
-    """Handle virtual try-on request"""
+    """Handle virtual try-on request - accepts both file uploads and base64 JSON"""
     try:
-        if 'person_image' not in request.files or 'clothing_image' not in request.files:
-            return jsonify({'error': 'Both person and clothing images are required'}), 400
-        
-        person_file = request.files['person_image']
-        clothing_file = request.files['clothing_image']
-        
-        if person_file.filename == '' or clothing_file.filename == '':
-            return jsonify({'error': 'No files selected'}), 400
-        
-        person_image_bytes = process_image(person_file)
-        clothing_image_bytes = process_image(clothing_file)
-        
+        # Check if request is JSON (base64) or form data (file upload)
+        if request.is_json:
+            # Handle base64 input
+            data = request.get_json()
+
+            if not data or 'person_image' not in data or 'clothing_image' not in data:
+                return jsonify({'error': 'Both person_image and clothing_image base64 data are required'}), 400
+
+            person_image_b64 = data['person_image']
+            clothing_image_b64 = data['clothing_image']
+
+            if not person_image_b64 or not clothing_image_b64:
+                return jsonify({'error': 'Both images must have valid base64 data'}), 400
+
+            person_image_bytes = process_image(person_image_b64)
+            clothing_image_bytes = process_image(clothing_image_b64)
+
+        else:
+            # Handle file upload
+            if 'person_image' not in request.files or 'clothing_image' not in request.files:
+                return jsonify({'error': 'Both person and clothing images are required'}), 400
+
+            person_file = request.files['person_image']
+            clothing_file = request.files['clothing_image']
+
+            if person_file.filename == '' or clothing_file.filename == '':
+                return jsonify({'error': 'No files selected'}), 400
+
+            # Convert files to bytes for processing
+            person_file_bytes = person_file.read()
+            clothing_file_bytes = clothing_file.read()
+
+            person_image_bytes = process_image(person_file_bytes)
+            clothing_image_bytes = process_image(clothing_file_bytes)
+
         if not person_image_bytes or not clothing_image_bytes:
             return jsonify({'error': 'Failed to process images'}), 400
         

@@ -35,14 +35,14 @@ class VirtualTryOnApp {
         if (!file) return;
 
         // Validate file type
-        if (!file.type.startsWith('image/')) {
-            this.showError('Please select a valid image file.');
+        if (!file.type.startsWith('image/') && !isValidImageType(file)) {
+            this.showError('Please select a valid image file (JPEG, PNG, GIF, WebP, HEIC, HEIF).');
             return;
         }
 
-        // Validate file size (max 10MB)
-        if (file.size > 10 * 1024 * 1024) {
-            this.showError('Image size should be less than 10MB.');
+        // Validate file size (max 20MB)
+        if (file.size > 20 * 1024 * 1024) {
+            this.showError('Image size should be less than 20MB.');
             return;
         }
 
@@ -55,20 +55,21 @@ class VirtualTryOnApp {
 
         // Preview the image
         this.previewImage(file, type);
-        
+
         // Update button state
         this.updateTryOnButton();
-        
+
         // Hide any existing errors
         this.hideError();
     }
+
 
     previewImage(file, type) {
         const reader = new FileReader();
         reader.onload = (e) => {
             const imgElement = document.getElementById(`${type}-img`);
             const placeholder = document.getElementById(`${type}-placeholder`);
-            
+
             imgElement.src = e.target.result;
             imgElement.style.display = 'block';
             placeholder.style.display = 'none';
@@ -76,12 +77,13 @@ class VirtualTryOnApp {
         reader.readAsDataURL(file);
     }
 
+
     updateTryOnButton() {
         const tryOnBtn = document.getElementById('try-on-btn');
         const hasAllImages = this.personImage && this.clothingImage;
-        
+
         tryOnBtn.disabled = !hasAllImages;
-        
+
         if (hasAllImages) {
             tryOnBtn.classList.remove('disabled');
         } else {
@@ -187,24 +189,24 @@ class VirtualTryOnApp {
         // Clear file inputs
         document.getElementById('person-image').value = '';
         document.getElementById('clothing-image').value = '';
-        
+
         // Clear stored images
         this.personImage = null;
         this.clothingImage = null;
-        
+
         // Reset previews
         this.resetPreview('person');
         this.resetPreview('clothing');
-        
+
         // Hide result
         this.hideResult();
-        
+
         // Hide error
         this.hideError();
-        
+
         // Update button state
         this.updateTryOnButton();
-        
+
         // Scroll to top
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -247,7 +249,7 @@ function formatFileSize(bytes) {
 }
 
 function isValidImageType(file) {
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
     return validTypes.includes(file.type);
 }
 
